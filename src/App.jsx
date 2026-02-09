@@ -1,19 +1,19 @@
 import { useState, useEffect } from 'react'
-import './echo.js'; 
+import './echo.js';
+import Notificaciones from './Notificaciones'; // <--- 1. IMPORTAMOS EL COMPONENTE
 
 function App() {
   const [mensajes, setMensajes] = useState([]);
   const [inputMensaje, setInputMensaje] = useState("");
-  // Generamos un usuario random, pero si quieres puedes poner uno fijo
   const [usuario] = useState("Vecino " + Math.floor(Math.random() * 100));
 
   useEffect(() => {
-    // 1. CARGAR HISTORIAL DE LA BASE DE DATOS (¡ESTO ES LO NUEVO!)
+    // 1. CARGAR HISTORIAL DE LA BASE DE DATOS
     fetch('http://127.0.0.1:8000/api/mensajes')
       .then(response => response.json())
       .then(data => {
         console.log("Historial cargado:", data);
-        setMensajes(data); // Llenamos el chat con lo que había guardado
+        setMensajes(data); 
       })
       .catch(error => console.error("Error cargando historial:", error));
 
@@ -21,7 +21,6 @@ function App() {
     window.Echo.channel('chat-condominio')
       .listen('NuevoMensajeChat', (evento) => {
         console.log("Mensaje nuevo en vivo:", evento);
-        // Agregamos el nuevo mensaje a la lista
         setMensajes((mensajesAnteriores) => [...mensajesAnteriores, evento]);
       });
 
@@ -55,9 +54,22 @@ function App() {
 
   return (
     <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', fontFamily: 'Arial', color: 'white' }}>
-      <h1>🏢 Chat del Condominio</h1>
       
-      {/* Área de mensajes */}
+      {/* --- CABECERA CON NOTIFICACIONES --- */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '20px',
+        borderBottom: '1px solid #444',
+        paddingBottom: '10px'
+      }}>
+        <h1 style={{ margin: 0 }}>🏢 Chat Condominio</h1>
+        {/* Aquí colocamos la campanita */}
+        <Notificaciones /> 
+      </div>
+      
+      {/* Área de mensajes (Tu código original) */}
       <div style={{ 
         border: '1px solid #ccc', 
         height: '300px', 
