@@ -66,3 +66,54 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* =========================================
+   AQUÍ COMIENZAN TUS NUEVAS ANIMACIONES
+   ========================================= */
+
+/* 1. ANIMACIÓN DE LA ALERTA (Cae y se desvanece) */
+/* Estado inicial antes de entrar */
+.alerta-enter {
+  opacity: 0;
+  transform: translateY(-20px) translateX(-50%); /* Empieza arriba */
+}
+/* Estado activo entrando */
+.alerta-enter-active {
+  opacity: 1;
+  transform: translateY(0) translateX(-50%); /* Llega a su lugar */
+  transition: opacity 300ms, transform 300ms;
+}
+/* Estado inicial antes de salir */
+.alerta-exit {
+  opacity: 1;
+  transform: translateY(0) translateX(-50%);
+}
+/* Estado activo saliendo */
+.alerta-exit-active {
+  opacity: 0;
+  transform: translateY(-20px) translateX(-50%); /* Se va hacia arriba */
+  transition: opacity 300ms, transform 300ms;
+}
+
+/* 2. ANIMACIÓN DEL BOTÓN (Cambio suave de texto) */
+/* Texto nuevo entrando */
+.boton-enter {
+  opacity: 0;
+  transform: translateY(5px);
+}
+.boton-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms, transform 200ms;
+}
+/* Texto viejo saliendo */
+.boton-exit {
+  opacity: 1;
+  transform: translateY(0);
+  position: absolute; /* Importante para que no salte el layout */
+}
+.boton-exit-active {
+  opacity: 0;
+  transform: translateY(-5px);
+  transition: opacity 200ms, transform 200ms;
+}
