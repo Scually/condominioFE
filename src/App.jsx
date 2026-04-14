@@ -1,157 +1,133 @@
 import { useState, useEffect, useRef } from 'react'
-import { CSSTransition, SwitchTransition } from 'react-transition-group'; // <--- IMPORTANTE: Las animaciones
+import { CSSTransition, SwitchTransition } from 'react-transition-group'; 
 import './echo.js'; 
 import Notificaciones from './Notificaciones';
+import Register from './Register'; // <--- 1. IMPORTAMOS EL REGISTRO
 
 function App() {
   const [mensajes, setMensajes] = useState([]);
   const [inputMensaje, setInputMensaje] = useState("");
   const [usuario] = useState("Vecino " + Math.floor(Math.random() * 100));
 
-  // --- NUEVOS ESTADOS PARA LA ANIMACIÓN ---
-  const [cargando, setCargando] = useState(false); // Controla el estado "Enviando..."
-  const [mostrarAlerta, setMostrarAlerta] = useState(false); // Controla la alerta verde
+  const [cargando, setCargando] = useState(false); 
+  const [mostrarAlerta, setMostrarAlerta] = useState(false); 
   
-  // Referencias necesarias para react-transition-group (evita errores en consola)
   const alertaRef = useRef(null); 
   const botonRef = useRef(null);
 
-  useEffect(() => {
-    // 1. Cargar historial
-    fetch('http://127.0.0.1:8000/api/mensajes')
-      .then(res => res.json())
-      .then(data => setMensajes(data))
-      .catch(err => console.error(err));
+  // Helper para obtener las cabeceras con el Token de seguridad
+  const getHeaders = () => ({
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+    'Authorization': `Bearer ${localStorage.getItem('token')}` // <--- LA LLAVE DE SANCTUM
+  });
 
-    // 2. WebSockets Chat
+  useEffect(() => {
+    // 2. ACTUALIZADO: Pasamos el token al pedir el historial
+    fetch('http://127.0.0.1:8000/api/mensajes', { headers: getHeaders() })
+      .then(res => {
+          if(!res.ok) throw new Error("No autorizado. ¿Ya te registraste?");
+          return res.json();
+      })
+      .then(data => setMensajes(data))
+      .catch(err => console.error(err.message));
+
     window.Echo.channel('chat-condominio')
       .listen('NuevoMensajeChat', (e) => setMensajes(prev => [...prev, e]));
 
     return () => window.Echo.leave('chat-condominio');
   }, []);
 
-  // --- FUNCIÓN QUE CONECTA CON EL BACKEND "LENTO" ---
   const simularNotificacion = async (tipo, texto) => {
-    setCargando(true);          // 1. Cambia el botón a "Enviando..."
-    setMostrarAlerta(false);    // 2. Oculta alerta anterior si existe
+    setCargando(true);          
+    setMostrarAlerta(false);    
 
     try {
-        // Hacemos la petición (Tardará 2 segundos por el sleep del Laravel)
-        await fetch('http://127.0.0.1:8000/api/test-notificacion', {
+        // 3. ACTUALIZADO: Pasamos el token al simular la notificación
+        const response = await fetch('http://127.0.0.1:8000/api/test-notificacion', {
             method: 'POST', 
-            headers: {'Content-Type': 'application/json'},
+            headers: getHeaders(), // Usamos la llave
             body: JSON.stringify({ tipo, texto })
         });
         
-        // Al terminar la espera:
-        setMostrarAlerta(true); // 3. Muestra la alerta verde animada
-        
-        // 4. Programamos que se oculte sola a los 3 segundos
+        if (!response.ok) {
+            // Si Laravel nos bloquea por no ser Admin o no tener token
+            const errData = await response.json();
+            throw new Error(errData.message || "Error de permisos");
+        }
+
+        setMostrarAlerta(true); 
         setTimeout(() => setMostrarAlerta(false), 3000); 
 
     } catch (error) {
         console.error(error);
-        alert("Error al conectar");
+        alert(`Error: ${error.message}`); // Mostramos el error real en pantalla
     } finally {
-        setCargando(false);     // 5. Restaura el botón a su estado normal
+        setCargando(false);     
     }
   };
 
-  // Función normal del chat
   const enviarMensaje = async (e) => {
       e.preventDefault();
       if (!inputMensaje) return;
+      
+      // 4. ACTUALIZADO: Pasamos el token al enviar el chat
       await fetch('http://127.0.0.1:8000/api/enviar-mensaje', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          method: 'POST', 
+          headers: getHeaders(), // Usamos la llave
           body: JSON.stringify({ usuario, mensaje: inputMensaje })
       });
       setInputMensaje(""); 
   };
 
-  return (
-    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', fontFamily: 'Arial', color: 'white' }}>
-      
-      {/* --- 1. ALERTA DE ÉXITO ANIMADA (CSSTransition) --- */}
-      <CSSTransition
-          nodeRef={alertaRef}
-          in={mostrarAlerta}
-          timeout={300}
-          classNames="alerta"
-          unmountOnExit
-      >
-          <div ref={alertaRef} style={{
-              position: 'fixed', top: '20px', left: '50%', // Centrado absoluto arriba
-              background: '#10b981', color: 'white', padding: '12px 24px', 
-              borderRadius: '50px', boxShadow: '0 10px 15px rgba(0,0,0,0.3)', 
-              zIndex: 9999, fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px'
-          }}>
-              ✅ ¡Notificación Enviada con Éxito!
-          </div>
-      </CSSTransition>
-
-      {/* Encabezado */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h1 style={{margin: 0}}>🏢 Chat Condominio</h1>
-          <Notificaciones />
-      </div>
-
-      {/* --- 2. BOTONES CON TRANSICIÓN DE CARGA (SwitchTransition) --- */}
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+  // ... (mismo código de lógica arriba)
+return (
+    <div style={{ padding: '40px 20px', maxWidth: '700px', margin: '0 auto' }}>
         
-        {/* Botón Multa (El que tiene la animación compleja) */}
-        <button 
-            onClick={() => simularNotificacion('multa', '🚨 Ruido excesivo')}
-            disabled={cargando}
-            style={{ 
-                padding: '12px 20px', background: cargando ? '#6b7280' : '#ef4444', 
-                color: 'white', border: 'none', borderRadius: '8px', cursor: cargando ? 'wait' : 'pointer',
-                fontWeight: 'bold', minWidth: '160px', overflow: 'hidden', position: 'relative'
-            }}
-        >
-            <SwitchTransition mode="out-in">
-                <CSSTransition
-                    key={cargando ? "cargando" : "multa"}
-                    nodeRef={botonRef}
-                    timeout={200}
-                    classNames="boton"
-                >
-                    <div ref={botonRef} style={{ display: 'inline-block' }}>
-                        {cargando ? "⏳ Enviando..." : "🚨 Simular Multa"}
+        {/* Registro al inicio */}
+        <Register />
+
+        <div className="glass-card" style={{ padding: '25px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h1 style={{ margin: 0, fontSize: '24px', color: '#60a5fa' }}>🏢 Panel Residencial</h1>
+                <Notificaciones />
+            </div>
+
+            {/* Botones de Acción */}
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '25px' }}>
+                <button onClick={() => simularNotificacion('multa', '🚨 Ruido en área común')} disabled={cargando}
+                    style={{ flex: 1, padding: '12px', background: '#ef4444', borderRadius: '10px', color: 'white', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>
+                    {cargando ? '⏳...' : 'Simular Multa'}
+                </button>
+                <button onClick={() => simularNotificacion('asamblea', '📢 Asamblea Mañana')}
+                    style={{ flex: 1, padding: '12px', background: '#10b981', borderRadius: '10px', color: 'white', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>
+                    📢 Asamblea
+                </button>
+            </div>
+
+            {/* Caja de Chat Estilizada */}
+            <div style={{ height: '350px', overflowY: 'auto', background: 'rgba(15, 23, 42, 0.5)', borderRadius: '12px', padding: '15px', marginBottom: '15px', border: '1px solid #334155' }}>
+                {mensajes.map((msg, index) => (
+                    <div key={index} style={{ marginBottom: '12px', alignSelf: msg.usuario.includes('Vecino') ? 'flex-start' : 'flex-end' }}>
+                        <div style={{ background: '#1e293b', padding: '10px 15px', borderRadius: '12px', borderBottomLeftRadius: '2px', display: 'inline-block', maxWidth: '80%' }}>
+                            <strong style={{ color: '#60a5fa', fontSize: '12px', display: 'block' }}>{msg.usuario}</strong>
+                            <span style={{ fontSize: '14px' }}>{msg.mensaje}</span>
+                        </div>
                     </div>
-                </CSSTransition>
-            </SwitchTransition>
-        </button>
+                ))}
+            </div>
 
-        {/* Botón Asamblea (Simple, usa la misma función) */}
-        <button 
-             onClick={() => simularNotificacion('asamblea', '📢 Reunión General')}
-             disabled={cargando}
-             style={{ padding: '12px 20px', background: '#10b981', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
-        >
-            📢 Simular Asamblea
-        </button>
-      </div>
-
-      {/* Chat Area */}
-      <div style={{ border: '1px solid #ccc', height: '300px', overflowY: 'scroll', marginBottom: '10px', padding: '10px', borderRadius: '8px', background: '#f9f9f9', color: 'black' }}>
-        {mensajes.map((msg, index) => (
-          <div key={index} style={{ marginBottom: '8px', padding: '8px', background: 'white', borderRadius: '5px', borderBottom: '1px solid #eee' }}>
-            <strong>{msg.usuario}:</strong> {msg.mensaje}
-          </div>
-        ))}
-      </div>
-
-      {/* Formulario Chat */}
-      <form onSubmit={enviarMensaje} style={{ display: 'flex', gap: '10px' }}>
-        <input type="text" value={inputMensaje} onChange={(e) => setInputMensaje(e.target.value)} placeholder="Escribe un mensaje..." style={{ flex: 1, padding: '10px', borderRadius: '5px', border: '1px solid #ddd', color: 'black' }} />
-        <button type="submit" style={{ padding: '10px 20px', background: '#007bff', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Enviar</button>
-      </form>
-      
-      <p style={{fontSize: '12px', color: '#ccc', marginTop: '10px'}}>
-        Tu usuario es: <strong>{usuario}</strong>
-      </p>
+            {/* Input del Chat */}
+            <form onSubmit={enviarMensaje} style={{ display: 'flex', gap: '10px' }}>
+                <input type="text" value={inputMensaje} onChange={(e) => setInputMensaje(e.target.value)} placeholder="Escribe al grupo..." 
+                    style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid #334155', background: '#0f172a', color: 'white', outline: 'none' }} />
+                <button type="submit" style={{ padding: '0 20px', background: '#3b82f6', borderRadius: '10px', border: 'none', color: 'white', cursor: 'pointer' }}>
+                    ➤
+                </button>
+            </form>
+        </div>
     </div>
-  )
+);
 }
 
 export default App

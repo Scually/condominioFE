@@ -1,119 +1,28 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  background-color: #0f172a; /* Azul muy oscuro profesional */
+  color: #f8fafc;
 }
 
 body {
   margin: 0;
   display: flex;
-  place-items: center;
-  min-width: 320px;
+  justify-content: center;
   min-height: 100vh;
+  background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* --- Efecto de Cristal (Glassmorphism) --- */
+.glass-card {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
-
-/* =========================================
-   AQUÍ COMIENZAN TUS NUEVAS ANIMACIONES
-   ========================================= */
-
-/* 1. ANIMACIÓN DE LA ALERTA (Cae y se desvanece) */
-/* Estado inicial antes de entrar */
-.alerta-enter {
-  opacity: 0;
-  transform: translateY(-20px) translateX(-50%); /* Empieza arriba */
-}
-/* Estado activo entrando */
-.alerta-enter-active {
-  opacity: 1;
-  transform: translateY(0) translateX(-50%); /* Llega a su lugar */
-  transition: opacity 300ms, transform 300ms;
-}
-/* Estado inicial antes de salir */
-.alerta-exit {
-  opacity: 1;
-  transform: translateY(0) translateX(-50%);
-}
-/* Estado activo saliendo */
-.alerta-exit-active {
-  opacity: 0;
-  transform: translateY(-20px) translateX(-50%); /* Se va hacia arriba */
-  transition: opacity 300ms, transform 300ms;
-}
-
-/* 2. ANIMACIÓN DEL BOTÓN (Cambio suave de texto) */
-/* Texto nuevo entrando */
-.boton-enter {
-  opacity: 0;
-  transform: translateY(5px);
-}
-.boton-enter-active {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 200ms, transform 200ms;
-}
-/* Texto viejo saliendo */
-.boton-exit {
-  opacity: 1;
-  transform: translateY(0);
-  position: absolute; /* Importante para que no salte el layout */
-}
-.boton-exit-active {
-  opacity: 0;
-  transform: translateY(-5px);
-  transition: opacity 200ms, transform 200ms;
-}
+/* --- Animaciones de Transición (Mantenemos las que tenías) --- */
+.alerta-enter { opacity: 0; transform: translateY(-20px) translateX(-50%); }
+.alerta-enter-active { opacity: 1; transform: translateY(0) translateX(-50%); transition: 300ms; }
+.alerta-exit { opacity: 1; }
+.alerta-exit-active { opacity: 0; transform: translateY(-20px) translateX(-50%); transition: 300ms; }
